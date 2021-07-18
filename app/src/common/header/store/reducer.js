@@ -8,6 +8,7 @@ const defaultState = fromJS({
   connectWallet: false,
   data: null,
   status: 'Not started',
+  seuupStatus: '',
   transaction: null,
   title: '',
   totalNumber: 0,
@@ -42,6 +43,10 @@ export default (state = defaultState, action) => {
     case constants.CHANGESTATUS:
       return state.merge({
         'status': action.value,
+      })
+    case constants.CHANGESETUPSTATUS:
+      return state.merge({
+        'seuupStatus': action.value,
       })
     case constants.CHANGETRANSACTION:
       return state.merge({

@@ -1,10 +1,37 @@
 import React, { PureComponent } from 'react'
 import { connect } from 'react-redux'
 import moment from 'moment'
-import { Button } from 'antd';
+import { Button, Modal } from 'antd';
 import { ReplaceAddress } from '../../config'
 import { actionCreatorsHeader } from '../header/store'
 import './index.less'
+
+const setUpAccountTransactionSource = `\
+import NonFungibleToken from "../../contracts/NonFungibleToken.cdc"
+import FanNFT from "../../contracts/FanNFT.cdc"
+pub fun hasGifts(_ address: Address): Bool {
+  return getAccount(address)
+    .getCapability<&FanNFT.Collection{NonFungibleToken.CollectionPublic, FanNFT.GiftCollectionPublic}>(FanNFT.GiftPublicPath)
+    .check()
+}
+transaction {
+  prepare(signer: AuthAccount) {
+    if !hasGifts(signer.address){
+      log("account init start")
+      if signer.borrow<&FanNFT.Collection>(from: FanNFT.GiftStoragePath) == nil {
+        signer.save(<-FanNFT.createEmptyCollection(), to: FanNFT.GiftStoragePath)
+      }
+      signer.unlink(FanNFT.GiftPublicPath)
+      signer.link<&{NonFungibleToken.CollectionPublic,FanNFT.GiftCollectionPublic}>
+        (FanNFT.GiftPublicPath,target: FanNFT.GiftStoragePath)
+    }else{
+      log("account init already")
+    }
+  }
+}
+`
+
+const getAuth = ReplaceAddress(setUpAccountTransactionSource)
 
 const createPackageTransactionSource = `\
 import NonFungibleToken from "../../contracts/NonFungibleToken.cdc"
@@ -40,13 +67,28 @@ class Home extends PureComponent {
   constructor(props) {
     super(props)
     this.state = {
-      left: 0
+      left: 0,
+      isModalVisible: false,
     }
-    // this.props.handleDataInfo = this.props.handleDataInfo.bind(this)
+    this.handleOk = this.handleOk.bind(this)
+    this.handleCancel = this.handleCancel.bind(this)
   }
 
   componentDidMount() {
     this.props.handleDataInfo(getPackagesScript)
+    // this.props.setUpAccountTransaction(getAuth)
+  }
+
+  handleOk() {
+    this.setState({
+      isModalVisible: false
+    })
+  }
+
+  handleCancel() {
+    this.setState({
+      isModalVisible: false
+    })
   }
 
   render() {
@@ -101,7 +143,6 @@ class Home extends PureComponent {
                         </Button>
                         </div>
                     }
-
                   </div>
                   : null
               )
@@ -112,6 +153,9 @@ class Home extends PureComponent {
             获取进行活动的data数据
           </div> */}
         </div>
+        <Modal title="confirm" visible={this.state.isModalVisible} onOk={this.handleOk} onCancel={this.handleCancel}>
+          <p>需要重新确认用户认证</p>
+        </Modal>
       </div>
     )
   }
@@ -131,6 +175,9 @@ const mapDispatchToProps = (dispatch) => {
   return {
     handleDataInfo(getPackagesScript) {
       dispatch(actionCreatorsHeader.dataInfo(getPackagesScript))
+    },
+    setUpAccountTransaction(getPackagesScript) {
+      dispatch(actionCreatorsHeader.toggleAuth(getPackagesScript))
     }
   }
 }

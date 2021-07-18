@@ -26,6 +26,11 @@ export const changeStatus = (value) => ({
   value
 })
 
+export const changeSetupStatus = (value) => ({
+  type: constants.CHANGESETUPSTATUS,
+  value
+})
+
 export const changeTransaction = (value) => ({
   type: constants.CHANGETRANSACTION,
   value
@@ -86,6 +91,39 @@ export const getChangeMetaArray = (metaDataArr) => ({
   value: fromJS(metaDataArr)
 })
 
+export const toggleAuth = (getAuth) => {
+  return async (dispatch) => {
+    try {
+      const blockResponse = await fcl.send([fcl.getLatestBlock()])
+      const block = await fcl.decode(blockResponse)
+      const {
+        transactionId
+      } = await fcl.send([
+        fcl.transaction(getAuth),
+        fcl.proposer(fcl.currentUser().authorization),
+        fcl.authorizations([fcl.currentUser().authorization]),
+        fcl.payer(fcl.currentUser().authorization),
+        fcl.ref(block.id),
+        fcl.limit(999),
+      ])
+
+      dispatch(changeSetupStatus('Transaction sent, waiting for confirmation' + ' trxId: ' + transactionId))
+
+      const unsub = fcl.tx({
+        transactionId
+      }).subscribe((transaction) => {
+        dispatch(changeTransaction(transaction))
+        if (fcl.tx.isSealed(transaction)) {
+          changeSetupStatus(changeSetupStatus('Transaction is Sealed'))
+          unsub()
+
+        }
+      })
+
+    } catch (err) {}
+  }
+}
+
 export const toggleConnectWallet = (event, connectWallet) => {
   event.preventDefault()
   return async (dispatch) => {
@@ -116,7 +154,7 @@ export const dataInfo = (getPackagesScript) => {
       const rewardAddressArr = []
       const lockedArr = []
       const giftIDsArr = []
-      for(var i = 0; i < resdecode.length; i++) {
+      for (var i = 0; i < resdecode.length; i++) {
         packageArr.push(resdecode[i].packageID)
         metaDataArr.push(JSON.parse(resdecode[i].metadata))
         totalNumberArr.push(resdecode[i].totalNumber)
@@ -142,7 +180,7 @@ export const createPackage = (event, setUpAccountTransaction, totalNumber, admin
         content: content + ' ', // 在内容后添加地址。如果是用户转发，替换成用户自己的地址
         keyWord: '#FanNFT #' + '[' + keyWord + ']', // 使用hashtag为 "#FanNFT #[keyWord]" 才能从Twitter的API获取
         createAt: (Date.now() / 1000) | 0,
-        deadline,
+        deadline: parseInt(deadline / 1000),
       })
       console.log('metaData', metaData)
       await dispatch(changeMetaData(metaData))
