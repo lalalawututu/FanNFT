@@ -1,32 +1,37 @@
+  
 import * as fcl from '@onflow/fcl'
 
-fcl
-  .config()
-  .put('accessNode.api', 'http://localhost:8080') // local Flow emulator
-  .put('challenge.handshake', 'http://localhost:8701/flow/authenticate') // local dev wallet
-  .put('challenge.scope', 'email') // request for Email
-// .put("accessNode.api", "https://access-testnet.onflow.org") // Flow testnet
-// .put("challenge.handshake", "https://flow-wallet-testnet.blocto.app/authn") // Blocto testnet wallet
-
-const flowServiceConfig = {
-  // minterFlowAddress: '0x20c418e24c7f99a5', // testnet
-  minterFlowAddress: '0xf8d6e0586b0a20c7', // emulator
-  // minterPrivateKeyHex: '8c2031f486af68f24d41d274d1e2af2fc69a600b9a4bd392734e2e95241d1b5f', // testnet
-  minterPrivateKeyHex: '84f82df6790f07b281adb5bbc848bd6298a2de67f94bdfac7a400d5a1b893de5', // emulator
-  minterAccountIndex: 0,
-}
-
-export const adminAddress = flowServiceConfig.minterFlowAddress
-
+const ISTESTNET = true
+export let adminAddress = '0xf8d6e0586b0a20c7'
+export let nonFungibleTokenAddress = '0xf8d6e0586b0a20c7'
+export let flowTokenAddress = '0x0ae53cb6e3f42a79'
+export let fungibleTokenAddress = '0xee82856bf20e2aa6'
 const nonFungibleTokenPath = '"../../contracts/NonFungibleToken.cdc"'
 const fanNFTPath = '"../../contracts/FanNFT.cdc"'
+const flowTokenPath = '"../../contracts/FlowToken.cdc"'
+const fungibleTokenPath = '"../../contracts/FungibleToken.cdc"'
 
-// export const nonFungibleTokenAddress = '0x631e88ae7f1d7c20' // testnet
-const nonFungibleTokenAddress = adminAddress // emulator
-const fanNFTPathAddress = adminAddress
+if (ISTESTNET) {
+  adminAddress = '0x3d23f5f79a6df524'
+  nonFungibleTokenAddress = '0x631e88ae7f1d7c20'
+  flowTokenAddress = '0x7e60df042a9c0868'
+  fungibleTokenAddress = '0x9a0766d93b6608b7'
+  fcl
+    .config()
+    .put('accessNode.api', 'https://access-testnet.onflow.org') // Flow testnet
+    .put('challenge.handshake', 'https://fcl-discovery.onflow.org/testnet/authn')
+} else {
+  // 模拟器
+  fcl
+    .config()
+    .put('accessNode.api', 'http://localhost:8080') // local Flow emulator
+    .put('discovery.wallet', 'http://localhost:3000/fcl/authn')
+}
 
 export const ReplaceAddress = (source) => {
   return source
     .replace(nonFungibleTokenPath, fcl.withPrefix(nonFungibleTokenAddress))
-    .replace(fanNFTPath, fcl.withPrefix(fanNFTPathAddress))
+    .replace(fanNFTPath, fcl.withPrefix(adminAddress))
+    .replace(flowTokenPath, fcl.withPrefix(flowTokenAddress))
+    .replace(fungibleTokenPath, fcl.withPrefix(fungibleTokenAddress))
 }

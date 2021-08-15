@@ -1,14 +1,17 @@
 import {
   fromJS
-} from 'immutable';
-import * as constants from './constants';
+} from 'immutable'
+import * as constants from './constants'
+// import zh_CN from '../../../locale/zh_CN'
+import en_US from '../../../locale/en_US'
 
 const defaultState = fromJS({
   user: [],
   connectWallet: false,
   data: null,
   status: 'Not started',
-  seuupStatus: '',
+  statusNumber: 0,
+  setupStatus: '',
   transaction: null,
   title: '',
   totalNumber: 0,
@@ -23,10 +26,16 @@ const defaultState = fromJS({
   rewardAddressArr: [],
   lockedArr: [],
   giftIDsArr: [],
-  userAddress: ''
-});
+  userAddress: '',
+  language: en_US,
+  toggleLanguage: true,
+  giftsData: [],
+  packageInfoList: [],
+  giftsDataList: [],
+  isModalVisible: true,
+})
 
-export default (state = defaultState, action) => {
+const reducer = (state = defaultState, action) => {
   switch (action.type) {
     case constants.CONNECTWALLET:
       return state.merge({
@@ -39,14 +48,18 @@ export default (state = defaultState, action) => {
     case constants.DATAINFO:
       return state.set('data', action.resdecode)
     case constants.CHANGEMETAARRAY:
-      return state.set('metaDataArr', action.value)
+      return state.merge({
+        'metaDataArr': action.value,
+        'packageInfoList': action.packageInfoList
+        })
     case constants.CHANGESTATUS:
       return state.merge({
         'status': action.value,
+        'statusNumber': action.num
       })
     case constants.CHANGESETUPSTATUS:
       return state.merge({
-        'seuupStatus': action.value,
+        'setupStatus': action.value,
       })
     case constants.CHANGETRANSACTION:
       return state.merge({
@@ -58,7 +71,7 @@ export default (state = defaultState, action) => {
       })
     case constants.CHANGENFT:
       return state.merge({
-        'nfturl': action.value,
+        'nfturl': action.file,
       })
     case constants.CHANGECONTENT:
       return state.merge({
@@ -84,6 +97,14 @@ export default (state = defaultState, action) => {
       return state.merge({
         'userAddress': action.address,
       })
+    case constants.GIFTS_INFO:
+      return state.merge({
+        'giftsDataList': action.giftsDataList,
+      })
+    case constants.IS_VISIBLE:
+      return state.merge({
+        'isModalVisible': action.bool,
+      })
     case constants.CHANGEINFOARRAY:
       return state.merge({
         'packageArr': action.packageArr,
@@ -92,7 +113,14 @@ export default (state = defaultState, action) => {
         'lockedArr': action.lockedArr,
         'giftIDsArr': action.giftIDsArr,
       })
+    case constants.LANGUAGE:
+      return state.merge({
+        'toggleLanguage': !state.get('toggleLanguage'),
+      })
+    case constants.LANGUAGE_INFO:
+      return state.set('language', action.language)
     default:
       return state;
   }
 }
+export default reducer

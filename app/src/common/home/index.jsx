@@ -1,9 +1,11 @@
 import React, { PureComponent } from 'react'
 import { connect } from 'react-redux'
 import moment from 'moment'
-import { Button, Modal } from 'antd';
+import { Button } from 'antd';
 import { ReplaceAddress } from '../../config'
 import { actionCreatorsHeader } from '../header/store'
+import { Share } from 'react-twitter-widgets'
+import { FormattedMessage } from 'react-intl'
 import './index.less'
 
 const setUpAccountTransactionSource = `\
@@ -70,48 +72,36 @@ class Home extends PureComponent {
       left: 0,
       isModalVisible: false,
     }
-    this.handleOk = this.handleOk.bind(this)
-    this.handleCancel = this.handleCancel.bind(this)
   }
 
   componentDidMount() {
     this.props.handleDataInfo(getPackagesScript)
-    // this.props.setUpAccountTransaction(getAuth)
-  }
-
-  handleOk() {
-    this.setState({
-      isModalVisible: false
-    })
-  }
-
-  handleCancel() {
-    this.setState({
-      isModalVisible: false
-    })
+    this.props.setUpAccountTransaction(getAuth)
   }
 
   render() {
     const {
-      handleDataInfo,
       packageArr,
       metaDataArr,
       totalNumberArr,
-      rewardAddressArr,
       lockedArr,
-      giftIDsArr,
+      userAddress,
+      isModalVisible,
+      handleOk,
+      handleCancel
     } = this.props
     const packageArrJS = packageArr.toJS()
     const lockedArrJS = lockedArr.toJS()
+    const metaDataArrJS = metaDataArr.toJS()
+    const totalNumberArrJS = totalNumberArr.toJS()
     return (
       <div className="homeBox">
         <div className="firstArea">
           {packageArrJS !== null ?
             packageArrJS.map((item, index) => {
-              const metaDataArrJS = metaDataArr.toJS()
-              const totalNumberArrJS = totalNumberArr.toJS()
-              // const end = moment.unix((metaDataArrJS[index].deadline)).format('YYYY/MM/DD hh:mm:ss')
-              const end = moment((metaDataArrJS[index].deadline)).format('YYYY/MM/DD HH:mm:ss')
+              const retweet = metaDataArrJS[index].content + ' ' + userAddress + ' ' + metaDataArrJS[index].keyWord
+              const end = moment.unix((metaDataArrJS[index].deadline)).format('YYYY/MM/DD hh:mm:ss')
+              // const end = moment((metaDataArrJS[index].deadline)).format('YYYY/MM/DD HH:mm:ss')
               return (
                 packageArr !== "" ?
                   <div className="one" key={index}>
@@ -119,28 +109,57 @@ class Home extends PureComponent {
                       <span>{metaDataArrJS[index].title}</span>
                     </div>
                     <div className="locked">
-                      <span>{lockedArrJS[index] ? "已结束" : "进行中"}</span>
+                      <span>{lockedArrJS[index] ?
+                        <FormattedMessage
+                          id='End'
+                          defaultMessage="End"
+                        />
+                        :
+                        <FormattedMessage
+                          id='Progress'
+                          defaultMessage="Progress"
+                        />
+                      }</span>
                     </div>
                     <div className="contentBox">
-                      <div className="contentText">转发内容{metaDataArrJS[index].content}</div>
-                      <div className="deadlineText">截止日期 {end}</div>
+                      <div className="contentText">
+                        <FormattedMessage
+                          id='Content'
+                          defaultMessage="Content"
+                        />：
+                        {metaDataArrJS[index].content}</div>
+                      <div className="deadlineText">
+                        <FormattedMessage
+                          id='Deadline'
+                          defaultMessage="Deadline"
+                        />:
+                        {end}</div>
                       <div className="imageBox">
                         <img src={metaDataArrJS[index].image} alt="" />
                       </div>
-                      <div className="totalText">总量 {totalNumberArrJS[index]}</div>
+                      <div className="totalText">
+                        <FormattedMessage
+                          id='GiftNumber'
+                          defaultMessage="Gift Number"
+                        />:
+                         {totalNumberArrJS[index]}</div>
                     </div>
                     {
                       lockedArrJS[index] ?
                         <div className="button">
                           <Button type="primary" shape="round" size="large">
-                            查看获奖的名单
-                        </Button>
+                            <FormattedMessage
+                              id='View'
+                              defaultMessage="view the winners"
+                            />
+                          </Button>
                         </div>
                         :
-                        <div className="button">
-                          <Button type="primary" shape="round" size="large">
+                        <div className="button1">
+                          {/* <Button type="primary" shape="round" size="large">
                             转发到我的推特
-                        </Button>
+                        </Button> */}
+                          <Share url="https://fannft.eth.link" username="reactjs" options={{ text: retweet, size: 'large' }} />
                         </div>
                     }
                   </div>
@@ -153,9 +172,6 @@ class Home extends PureComponent {
             获取进行活动的data数据
           </div> */}
         </div>
-        <Modal title="confirm" visible={this.state.isModalVisible} onOk={this.handleOk} onCancel={this.handleCancel}>
-          <p>需要重新确认用户认证</p>
-        </Modal>
       </div>
     )
   }
@@ -169,6 +185,7 @@ const mapStateToProps = (state) => ({
   rewardAddressArr: state.getIn(['header', 'rewardAddressArr']),
   lockedArr: state.getIn(['header', 'lockedArr']),
   giftIDsArr: state.getIn(['header', 'giftIDsArr']),
+  userAddress: state.getIn(['header', 'userAddress']),
 })
 
 const mapDispatchToProps = (dispatch) => {
@@ -178,7 +195,7 @@ const mapDispatchToProps = (dispatch) => {
     },
     setUpAccountTransaction(getPackagesScript) {
       dispatch(actionCreatorsHeader.toggleAuth(getPackagesScript))
-    }
+    },
   }
 }
 
